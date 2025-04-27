@@ -1,6 +1,15 @@
 FROM rust:latest as builder
 
-RUN apt-get update && apt-get install -y build-essential clang pkg-config
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    zlib1g-dev \
+    cmake \
+    clang \
+    libclang-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
