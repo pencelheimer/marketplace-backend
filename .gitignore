@@ -1,0 +1,7 @@
+/target
+
+env
+
+.idea
+.DS_Store
+tests/.DS_Store
