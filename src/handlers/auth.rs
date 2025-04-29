@@ -30,7 +30,6 @@ pub struct SignupResponse {
     token: String,
 }
 
-// Структура для токена
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: Uuid,

@@ -8,13 +8,14 @@ use futures_util::StreamExt;
 use mime_guess::from_path;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use sqlx::{Arguments, FromRow, PgPool, Postgres, QueryBuilder, Row, Transaction};
+use sqlx::types::Json;
+use sqlx::{FromRow, PgPool, Postgres, QueryBuilder, Row, Transaction};
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 struct Category {
     category_id: i32,
     name: String,
@@ -53,7 +54,7 @@ async fn categories(db_pool: web::Data<PgPool>) -> Result<impl Responder, actix_
         .json(CategoriesResponse { categories }))
 }
 
-#[derive(Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 struct PaymentOptions {
     id: i32,
     name: String,
@@ -77,7 +78,7 @@ async fn payment_options(db_pool: web::Data<PgPool>) -> Result<impl Responder, a
         .json(PaymentOptionsRequest { payment_options }))
 }
 
-#[derive(Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 struct DeliveryOptions {
     id: i32,
     name: String,
@@ -401,12 +402,19 @@ pub struct ProductQuery {
     category: Option<String>,
     last_seen_id: Option<i64>,
     limit: Option<i64>,
+    user_id: Option<Uuid>,
+    search: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Photo {
+    id: i32,
+    url: String,
 }
 
 #[derive(FromRow, Serialize)]
 pub struct Product {
     id: i32,
-    photo: String,
     title: String,
     category_id: i32,
     description: String,
@@ -415,72 +423,75 @@ pub struct Product {
     price: BigDecimal,
     phone_number: String,
     created_at: NaiveDateTime,
+    user_id: Uuid,
+    photos: Json<Vec<Photo>>,
 }
 
 #[get("")]
 pub async fn get_products(
-    user: AuthenticatedUser,
+    _: AuthenticatedUser,
     pool: web::Data<PgPool>,
     query: web::Query<ProductQuery>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    println!("Authenticated user: {:?}", user);
+    let limit = query.limit.unwrap_or(20);
 
-    let mut sql = String::from(
-        "SELECT id, photo, title, category_id, description, brand, condition, price, phone_number, created_at FROM products WHERE 1=1",
+    let mut qb = QueryBuilder::new(
+        r#"
+    SELECT
+        p.id,
+        p.title,
+        p.category_id,
+        p.description,
+        p.brand,
+        p.condition,
+        p.price,
+        p.phone_number,
+        p.created_at,
+        p.user_id,
+        COALESCE(
+            json_agg(
+                json_build_object('id', ph.id, 'url', ph.url)
+            ) FILTER (WHERE ph.id IS NOT NULL),
+            '[]'
+        )::json AS photos
+    FROM products p
+    LEFT JOIN product_images ph ON ph.product_id = p.id
+    WHERE 1=1
+"#,
     );
-    let mut args = sqlx::postgres::PgArguments::default();
-    let mut arg_count = 1;
 
-    if let Some(ref category) = query.category {
-        sql.push_str(" AND category = $1");
-        args.add(category).map_err(|e| {
-            eprintln!("Argument error: {}", e);
-            <actix_web::Error as std::convert::From<_>>::from(actix_web::error::InternalError::new(
-                e,
-                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        })?;
-        arg_count += 1;
+    if let Some(category_id) = &query.category {
+        qb.push(" AND p.category_id = ");
+        qb.push_bind(category_id);
+    }
+
+    if let Some(user_id) = &query.user_id {
+        qb.push(" AND p.user_id = ");
+        qb.push_bind(user_id);
     }
 
     if let Some(last_seen_id) = query.last_seen_id {
-        sql.push_str(" AND id < $2");
-        args.add(last_seen_id).map_err(|e| {
-            eprintln!("Argument error: {}", e);
-            <actix_web::Error as std::convert::From<_>>::from(actix_web::error::InternalError::new(
-                e,
-                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        })?;
-        arg_count += 1;
+        qb.push(" AND p.id < ");
+        qb.push_bind(last_seen_id);
     }
 
-    sql.push_str(" ORDER BY id DESC");
+    if let Some(search) = &query.search {
+        qb.push(" AND LIKE p.title = %");
+        qb.push_bind(search);
+        qb.push_bind("%");
+        qb.push(" OR LIKE p.description = %");
+        qb.push_bind(search);
+        qb.push_bind("%");
+    }
 
-    let limit = query.limit.unwrap_or(20);
-    sql.push_str(&format!(" LIMIT ${}", arg_count));
-    args.add(limit).map_err(|e| {
-        eprintln!("Argument error: {}", e);
-        <actix_web::Error as std::convert::From<_>>::from(actix_web::error::InternalError::new(
-            e,
-            actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
-        ))
-    })?;
+    qb.push(" GROUP BY p.id ORDER BY p.id DESC LIMIT ");
+    qb.push_bind(limit);
 
-    println!("SQL: {}", sql);
-
-    println!("Args: {:?}", args);
-
-    let products = sqlx::query_as_with::<_, Product, _>(&sql, args)
+    let rows = qb
+        .build_query_as::<Product>()
         .fetch_all(pool.get_ref())
         .await
-        .map_err(|e| {
-            eprintln!("Database error: {}", e);
-            <actix_web::Error as std::convert::From<_>>::from(actix_web::error::InternalError::new(
-                e,
-                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        })?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(products))
+    Ok(HttpResponse::Ok().json(rows))
 }
