@@ -141,6 +141,11 @@ pub struct CreateProductRequest {
     pub phone_number: String,
     pub delivery_option_ids: Vec<i32>,
     pub payment_option_ids: Vec<i32>,
+    pub color: Option<String>,
+    pub shoe_size: Option<String>,
+    pub clothing_size: Option<String>,
+    pub gender: Option<String>,
+    pub material: Option<String>,
 }
 
 pub fn validate_phone_number(phone_number: &str) -> Result<(), actix_web::Error> {
@@ -208,6 +213,12 @@ fn parse_form_data(
         .parse::<ProductCondition>()
         .map_err(|_| actix_web::error::ErrorBadRequest("Invalid condition"))?;
 
+    let color = form.get("color").cloned();
+    let shoe_size = form.get("shoe_size").cloned();
+    let clothing_size = form.get("clothing_size").cloned();
+    let gender = form.get("gender").cloned();
+    let material = form.get("material").cloned();
+
     Ok(CreateProductRequest {
         title,
         description,
@@ -218,6 +229,11 @@ fn parse_form_data(
         phone_number,
         delivery_option_ids,
         payment_option_ids,
+        color,
+        shoe_size,
+        clothing_size,
+        gender,
+        material,
     })
 }
 
@@ -228,21 +244,28 @@ async fn insert_product(
 ) -> Result<i32, actix_web::Error> {
     let rec = sqlx::query(
         "INSERT INTO products
-        (user_id, title, description, category_id, brand, condition, price, phone_number)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (user_id, title, description, category_id, brand, condition, price, phone_number,
+         color, shoe_size, clothing_size, gender, material)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+                $9, $10, $11, $12, $13)
         RETURNING id",
     )
-    .bind(user_id)
-    .bind(&data.title)
-    .bind(&data.description)
-    .bind(&data.category_id)
-    .bind(&data.brand)
-    .bind(&data.condition.to_string())
-    .bind(&data.price)
-    .bind(&data.phone_number)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+        .bind(user_id)
+        .bind(&data.title)
+        .bind(&data.description)
+        .bind(&data.category_id)
+        .bind(&data.brand)
+        .bind(&data.condition.to_string())
+        .bind(&data.price)
+        .bind(&data.phone_number)
+        .bind(&data.color)
+        .bind(&data.shoe_size)
+        .bind(&data.clothing_size)
+        .bind(&data.gender)
+        .bind(&data.material)
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(rec
         .try_get("id")
@@ -424,6 +447,11 @@ pub struct Product {
     phone_number: String,
     created_at: NaiveDateTime,
     user_id: Uuid,
+    color: Option<String>,
+    shoe_size: Option<String>,
+    clothing_size: Option<String>,
+    gender: Option<String>,
+    material: Option<String>,
     photos: Json<Vec<Photo>>,
 }
 
@@ -448,6 +476,11 @@ pub async fn get_products(
         p.phone_number,
         p.created_at,
         p.user_id,
+        p.color,
+        p.shoe_size,
+        p.clothing_size,
+        p.gender,
+        p.material,
         COALESCE(
             json_agg(
                 json_build_object('id', ph.id, 'url', ph.url)
@@ -476,12 +509,11 @@ pub async fn get_products(
     }
 
     if let Some(search) = &query.search {
-        qb.push(" AND LIKE p.title = %");
-        qb.push_bind(search);
-        qb.push_bind("%");
-        qb.push(" OR LIKE p.description = %");
-        qb.push_bind(search);
-        qb.push_bind("%");
+        qb.push(" AND (p.title ILIKE ");
+        qb.push_bind(format!("%{}%", search));
+        qb.push(" OR p.description ILIKE ");
+        qb.push_bind(format!("%{}%", search));
+        qb.push(")");
     }
 
     qb.push(" GROUP BY p.id ORDER BY p.id DESC LIMIT ");
@@ -494,4 +526,85 @@ pub async fn get_products(
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(rows))
+}
+
+#[derive(Serialize)]
+pub struct OptionValue {
+    pub value: String,
+    pub label: String,
+}
+
+#[get("/options/colors")]
+async fn get_colors() -> impl Responder {
+    let data = vec![
+        OptionValue { value: "red".into(), label: "Червоний".into() },
+        OptionValue { value: "blue".into(), label: "Синій".into() },
+        OptionValue { value: "black".into(), label: "Чорний".into() },
+        OptionValue { value: "white".into(), label: "Білий".into() },
+    ];
+    HttpResponse::Ok().json(data)
+}
+
+#[get("/options/shoe-sizes")]
+async fn get_shoe_sizes() -> impl Responder {
+    let data = vec![
+        OptionValue { value: "38".into(), label: "24".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "25".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "26".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "27".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "28".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "29".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "30".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "31".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "32".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "33".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "34".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "35".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "36".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "37".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "38".parse().unwrap() },
+        OptionValue { value: "38".into(), label: "39".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "40".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "41".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "42".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "43".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "44".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "45".parse().unwrap() },
+        OptionValue { value: "40".into(), label: "46".parse().unwrap() },
+    ];
+    HttpResponse::Ok().json(data)
+}
+
+#[get("/options/clothing-sizes")]
+async fn get_clothing_sizes() -> impl Responder {
+    let data = vec![
+        OptionValue { value: "S".into(), label: "Small".parse().unwrap() },
+        OptionValue { value: "M".into(), label: "Medium".parse().unwrap() },
+        OptionValue { value: "L".into(), label: "Large".parse().unwrap() },
+        OptionValue { value: "XL".into(), label: "XLarge".parse().unwrap() },
+        OptionValue { value: "XXL".into(), label: "XXLarge".parse().unwrap() },
+        OptionValue { value: "XXXL".into(), label: "XXXLarge".parse().unwrap() },
+        OptionValue { value: "XXXXL".into(), label: "XXXLarge".parse().unwrap() },
+    ];
+    HttpResponse::Ok().json(data)
+}
+
+#[get("/options/genders")]
+async fn get_genders() -> impl Responder {
+    let data = vec![
+        OptionValue { value: "male".into(), label: "Чоловіча".parse().unwrap() },
+        OptionValue { value: "female".into(), label: "Жіноча".parse().unwrap() },
+        OptionValue { value: "unisex".into(), label: "Унісекс".parse().unwrap() },
+    ];
+    HttpResponse::Ok().json(data)
+}
+
+#[get("/options/materials")]
+async fn get_materials() -> impl Responder {
+    let data = vec![
+        OptionValue { value: "leather".into(), label: "Шкіра".parse().unwrap() },
+        OptionValue { value: "cotton".into(), label: "Бавовна".parse().unwrap() },
+        OptionValue { value: "polyester".into(), label: "Поліестер".parse().unwrap() },
+    ];
+    HttpResponse::Ok().json(data)
 }

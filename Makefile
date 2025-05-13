@@ -5,7 +5,7 @@ login:
 	docker login
 
 build:
-	docker buildx build --platform linux/amd64 -t alexandrvirtual/marketplace-api:latest --push .
+	docker buildx build --platform linux/amd64 --cpus="2.0" -t alexandrvirtual/marketplace-api:latest --push .
 
 pull:
 	docker pull alexandrvirtual/marketplace-api:latest

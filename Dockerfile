@@ -20,7 +20,7 @@ WORKDIR /app
 COPY . .
 
 RUN cargo fetch
-RUN cargo build --release --bin marketplace-api
+RUN RUSTFLAGS="-C opt-level=1" cargo build --jobs 2 --release --bin marketplace-api
 
 # ----
 

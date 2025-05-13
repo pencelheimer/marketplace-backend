@@ -13,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{PgPool, Row};
 use std::env;
+use lettre::message::header::ContentType;
+use lettre::message::SinglePart;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -57,7 +59,7 @@ impl EmailConfig {
 
 async fn send_confirmation_email(
     user_email: &str,
-    body: &str,
+    html_body: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let config = EmailConfig::from_env()?;
 
@@ -65,7 +67,11 @@ async fn send_confirmation_email(
         .from(config.from.parse()?)
         .to(user_email.parse()?)
         .subject("Confirm your registration")
-        .body(body.to_string())?;
+        .singlepart(
+            SinglePart::builder()
+                .header(ContentType::TEXT_HTML)
+                .body(html_body.to_string()),
+        )?;
 
     let creds = Credentials::new(config.user, config.password);
 

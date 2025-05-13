@@ -31,3 +31,4 @@ reqwest = { version = "0.12.15", features = ["json", "multipart"] }
 mime_guess = "2.0"
 bigdecimal = { version = "0.4.8", features = ["serde"] }
 futures = "0.3.31"
+axum = "0.8.4"
