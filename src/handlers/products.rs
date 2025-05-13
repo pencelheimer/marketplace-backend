@@ -250,22 +250,22 @@ async fn insert_product(
                 $9, $10, $11, $12, $13)
         RETURNING id",
     )
-        .bind(user_id)
-        .bind(&data.title)
-        .bind(&data.description)
-        .bind(&data.category_id)
-        .bind(&data.brand)
-        .bind(&data.condition.to_string())
-        .bind(&data.price)
-        .bind(&data.phone_number)
-        .bind(&data.color)
-        .bind(&data.shoe_size)
-        .bind(&data.clothing_size)
-        .bind(&data.gender)
-        .bind(&data.material)
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(actix_web::error::ErrorInternalServerError)?;
+    .bind(user_id)
+    .bind(&data.title)
+    .bind(&data.description)
+    .bind(&data.category_id)
+    .bind(&data.brand)
+    .bind(&data.condition.to_string())
+    .bind(&data.price)
+    .bind(&data.phone_number)
+    .bind(&data.color)
+    .bind(&data.shoe_size)
+    .bind(&data.clothing_size)
+    .bind(&data.gender)
+    .bind(&data.material)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(rec
         .try_get("id")
@@ -537,10 +537,22 @@ pub struct OptionValue {
 #[get("/options/colors")]
 async fn get_colors() -> impl Responder {
     let data = vec![
-        OptionValue { value: "red".into(), label: "Червоний".into() },
-        OptionValue { value: "blue".into(), label: "Синій".into() },
-        OptionValue { value: "black".into(), label: "Чорний".into() },
-        OptionValue { value: "white".into(), label: "Білий".into() },
+        OptionValue {
+            value: "red".into(),
+            label: "Червоний".into(),
+        },
+        OptionValue {
+            value: "blue".into(),
+            label: "Синій".into(),
+        },
+        OptionValue {
+            value: "black".into(),
+            label: "Чорний".into(),
+        },
+        OptionValue {
+            value: "white".into(),
+            label: "Білий".into(),
+        },
     ];
     HttpResponse::Ok().json(data)
 }
@@ -548,29 +560,98 @@ async fn get_colors() -> impl Responder {
 #[get("/options/shoe-sizes")]
 async fn get_shoe_sizes() -> impl Responder {
     let data = vec![
-        OptionValue { value: "38".into(), label: "24".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "25".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "26".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "27".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "28".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "29".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "30".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "31".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "32".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "33".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "34".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "35".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "36".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "37".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "38".parse().unwrap() },
-        OptionValue { value: "38".into(), label: "39".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "40".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "41".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "42".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "43".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "44".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "45".parse().unwrap() },
-        OptionValue { value: "40".into(), label: "46".parse().unwrap() },
+        OptionValue {
+            value: "38".into(),
+            label: "24".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "25".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "26".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "27".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "28".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "29".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "30".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "31".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "32".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "33".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "34".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "35".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "36".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "37".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "38".parse().unwrap(),
+        },
+        OptionValue {
+            value: "38".into(),
+            label: "39".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "40".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "41".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "42".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "43".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "44".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "45".parse().unwrap(),
+        },
+        OptionValue {
+            value: "40".into(),
+            label: "46".parse().unwrap(),
+        },
     ];
     HttpResponse::Ok().json(data)
 }
@@ -578,13 +659,34 @@ async fn get_shoe_sizes() -> impl Responder {
 #[get("/options/clothing-sizes")]
 async fn get_clothing_sizes() -> impl Responder {
     let data = vec![
-        OptionValue { value: "S".into(), label: "Small".parse().unwrap() },
-        OptionValue { value: "M".into(), label: "Medium".parse().unwrap() },
-        OptionValue { value: "L".into(), label: "Large".parse().unwrap() },
-        OptionValue { value: "XL".into(), label: "XLarge".parse().unwrap() },
-        OptionValue { value: "XXL".into(), label: "XXLarge".parse().unwrap() },
-        OptionValue { value: "XXXL".into(), label: "XXXLarge".parse().unwrap() },
-        OptionValue { value: "XXXXL".into(), label: "XXXLarge".parse().unwrap() },
+        OptionValue {
+            value: "S".into(),
+            label: "Small".parse().unwrap(),
+        },
+        OptionValue {
+            value: "M".into(),
+            label: "Medium".parse().unwrap(),
+        },
+        OptionValue {
+            value: "L".into(),
+            label: "Large".parse().unwrap(),
+        },
+        OptionValue {
+            value: "XL".into(),
+            label: "XLarge".parse().unwrap(),
+        },
+        OptionValue {
+            value: "XXL".into(),
+            label: "XXLarge".parse().unwrap(),
+        },
+        OptionValue {
+            value: "XXXL".into(),
+            label: "XXXLarge".parse().unwrap(),
+        },
+        OptionValue {
+            value: "XXXXL".into(),
+            label: "XXXLarge".parse().unwrap(),
+        },
     ];
     HttpResponse::Ok().json(data)
 }
@@ -592,9 +694,18 @@ async fn get_clothing_sizes() -> impl Responder {
 #[get("/options/genders")]
 async fn get_genders() -> impl Responder {
     let data = vec![
-        OptionValue { value: "male".into(), label: "Чоловіча".parse().unwrap() },
-        OptionValue { value: "female".into(), label: "Жіноча".parse().unwrap() },
-        OptionValue { value: "unisex".into(), label: "Унісекс".parse().unwrap() },
+        OptionValue {
+            value: "male".into(),
+            label: "Чоловіча".parse().unwrap(),
+        },
+        OptionValue {
+            value: "female".into(),
+            label: "Жіноча".parse().unwrap(),
+        },
+        OptionValue {
+            value: "unisex".into(),
+            label: "Унісекс".parse().unwrap(),
+        },
     ];
     HttpResponse::Ok().json(data)
 }
@@ -602,9 +713,18 @@ async fn get_genders() -> impl Responder {
 #[get("/options/materials")]
 async fn get_materials() -> impl Responder {
     let data = vec![
-        OptionValue { value: "leather".into(), label: "Шкіра".parse().unwrap() },
-        OptionValue { value: "cotton".into(), label: "Бавовна".parse().unwrap() },
-        OptionValue { value: "polyester".into(), label: "Поліестер".parse().unwrap() },
+        OptionValue {
+            value: "leather".into(),
+            label: "Шкіра".parse().unwrap(),
+        },
+        OptionValue {
+            value: "cotton".into(),
+            label: "Бавовна".parse().unwrap(),
+        },
+        OptionValue {
+            value: "polyester".into(),
+            label: "Поліестер".parse().unwrap(),
+        },
     ];
     HttpResponse::Ok().json(data)
 }

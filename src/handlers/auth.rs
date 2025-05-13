@@ -7,14 +7,14 @@ use futures_util::future::{Ready, ready};
 use jsonwebtoken::{
     Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation, decode, encode,
 };
+use lettre::message::SinglePart;
+use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{PgPool, Row};
 use std::env;
-use lettre::message::header::ContentType;
-use lettre::message::SinglePart;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -165,7 +165,120 @@ pub async fn signup(
     .unwrap();
 
     let body = format!(
-        "Please confirm your registration by clicking the following link:\n{}/{}",
+        "<!DOCTYPE html>
+<html lang=\"uk\">
+  <head>
+    <meta charset=\"UTF-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <title>Підтвердження пошти</title>
+    <style>
+      body {{
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background-color: #ffffff;
+        color: #333333;
+      }}
+
+      .container {{
+        max-width: 600px;
+        margin: auto;
+        background: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }}
+
+      .header {{
+        background: linear-gradient(to right, #f7941d, #fbd38d);
+        text-align: center;
+        padding: 30px 30px 0px;
+      }}
+
+      .header img {{
+        max-width: 250px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+      }}
+
+      .content {{
+        padding: 20px;
+        text-align: center;
+      }}
+
+      .content h1 {{
+        font-size: 22px;
+        margin-bottom: 10px;
+      }}
+
+      .content p {{
+        font-size: 16px;
+        margin-bottom: 20px;
+      }}
+
+      .btn {{
+        display: inline-block;
+        padding: 12px 24px;
+        background: linear-gradient(to right, #f7941d, #fbd38d);
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 25px;
+        font-size: 16px;
+      }}
+
+      .footer {{
+        font-size: 14px;
+        padding: 0 20px 20px;
+        color: #666666;
+        text-align: center;
+      }}
+
+      @media (max-width: 600px) {{
+        .content h1 {{
+          font-size: 20px;
+        }}
+
+        .content p {{
+          font-size: 15px;
+        }}
+
+        .btn {{
+          font-size: 15px;
+          padding: 10px 20px;
+        }}
+      }}
+    </style>
+  </head>
+  <body>
+    <div class=\"container\">
+      <div class=\"header\">
+        <img
+          src=\"https://marketplace-bucket-mmsj1bcf.s3.eu-central-1.amazonaws.com/email/email.png\"
+          alt=\"Shum маркетплейс\"
+        />
+      </div>
+      <div class=\"content\">
+        <h1>Підтвердіть Вашу пошту</h1>
+        <p>Привіт, {}!</p>
+        <p>
+          Дякуємо, що приєдналися до маркетплейсу Shum. Щоб завершити
+          реєстрацію, підтвердіть свою електронну адресу, натиснувши на кнопку
+          нижче.
+        </p>
+        <a href=\"{}/{}\" class=\"btn\">Підтвердити</a>
+      </div>
+      <div class=\"footer\">
+        <p>
+          Якщо ви не створювали обліковий запис, просто проігноруйте цей лист.
+        </p>
+        <p>З повагою, Команда Shum.</p>
+      </div>
+    </div>
+  </body>
+</html>",
+        &user.first_name,
         env::var("EMAIL_REGISTRATION_URL").unwrap(),
         token
     );

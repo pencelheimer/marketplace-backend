@@ -10,7 +10,11 @@ use crate::handlers::auth::{
     SignupRequest, confirm, login, logout, otp_verify, refresh_token, reset_password, signup,
     update_password,
 };
-use crate::handlers::products::{categories as product_categories, create as product_create, delivery_options, get_clothing_sizes, get_colors, get_genders, get_materials, get_products, get_shoe_sizes, payment_options};
+use crate::handlers::products::{
+    categories as product_categories, create as product_create, delivery_options,
+    get_clothing_sizes, get_colors, get_genders, get_materials, get_products, get_shoe_sizes,
+    payment_options,
+};
 use crate::handlers::users::{categories as user_categories, create as user_create};
 use actix_cors::Cors;
 use utoipa::OpenApi;
