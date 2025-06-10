@@ -6,6 +6,7 @@ mod handlers;
 mod services;
 
 use crate::handlers::auth;
+use crate::handlers::chat;
 use crate::handlers::products;
 use crate::handlers::users;
 use actix_cors::Cors;
@@ -50,7 +51,20 @@ async fn main() -> std::io::Result<()> {
             })
             .app_data(web::Data::new(pool.clone()))
             .service(
-                openapi_scope("/api/v1"), // openapi service register
+                openapi_scope("/api/v1")
+                    // openapi service register
+                    .service(
+                        openapi_scope("/chats")
+                            .service(chat::chat_list)
+                            .service(chat::chat_create),
+                    )
+                    .service(
+                        openapi_scope("/messages")
+                            .service(chat::message_list)
+                            .service(chat::message_create)
+                            .service(chat::message_unread_count)
+                            .service(chat::message_mark_read),
+                    ),
             )
             .openapi_service(|api| {
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", api)
